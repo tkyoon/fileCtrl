@@ -1,0 +1,92 @@
+doctype html
+html
+head
+title= title
+link(rel='stylesheet', href='/stylesheets/style.css')
+link(rel='stylesheet', href='/stylesheets/bootstrap.css')
+link(rel='stylesheet', href='/stylesheets/dropzone/basic.css')
+link(rel='stylesheet', href='/stylesheets/dropzone/dropzone.css')
+
+script(type='text/javascript', src='/javascripts/json.js')
+script(type='text/javascript', src='/javascripts/dropzone.js')
+script(type='text/javascript', src='/javascripts/jquery-1.7.1.js')
+
+script(type='text/javascript').
+	$(window.document).ready(function() {
+		//$("#demo-upload").dropzone({ url: "/createFile" });
+		Dropzone.options.myDropzone = {
+			autoProcessQueue : false,
+			init : function() {
+				$("#btn-uploadFiles").bind("click", function() {
+					myDropzone.processQueue();
+				});
+
+				this.on("success", function(obj) {
+					//alert("queuecomplete");
+					console.log(obj);
+				});
+
+				this.on("queuecomplete", function(obj) {
+					setTimeout( "location.reload()", 2*1000 );
+				});
+			}
+		};
+
+		var myDropzone = new Dropzone("#frm-upload", Dropzone.options.myDropzone);
+	});
+
+- var convertFileSize = function(fileSize) {
+-	var kb = 1024;		// 1Kbyte
+-	var mb = kb * 1024;	// 1Mbyte
+-	var gb = mb * 1024;	// 1Gbyte
+-	var tb = gb * 1024;	// 1Tbyte
+-	var fileSz = parseInt(fileSize);
+-	if (mb > fileSz) {
+-		return (fileSize / kb).toFixed(2) + ' KB';
+-	} else if (mb <= fileSz && gb > fileSz) {
+-		return (fileSize / mb).toFixed(2) + ' MB';
+-	} else if (gb <= fileSz && tb > fileSz) {
+-		return (fileSize / gb).toFixed(2) + ' GB';
+-	} else if (tb <= fileSz) {
+-		return (fileSize / tb).toFixed(2) + ' TB';
+-	}
+-}
+
+body
+	div.container
+		div.page-header
+			h1= title
+
+		div(style='height:30px')
+			button#btn-uploadFiles.btn.btn-primary.btn-lg(style="float:right") Upload
+
+		div#uploadArea
+			form#frm-upload.dropzone.dz-clickable(action="/createFile")
+				div.dz-default.dz-message
+					span Drop files here to upload
+
+		table.table.table-bordered.table-striped(style="margin: auto")
+			col(width="10%")
+			col(width="1%")
+			col(width="")
+			col(width="10%")
+			col(width="20%")
+			col(width="10%")
+			thead(style="background-color: #C0C0C0")
+				tr
+					th id
+					th version
+					th file명
+					th size
+					th 등록일자
+					th Action
+				tbody#grid
+					each file in files
+						tr
+							td= file.id
+							td= file.version
+							td
+								a(href="/downloadFile?fileId="+file.id+"&version="+file.version)= file.name
+							td #{convertFileSize(file.size)}
+							td= moment(file.regDd).format("YYYY/MM/DD hh:mm:ss")
+							td Action

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" media="all" href="/stylesheets/style.css" />
+<link rel="stylesheet" type="text/css" media="all" href="/stylesheets/bootstrap.css" />
+
+<link rel="stylesheet" type="text/css" media="all" href="/stylesheets/dropzone/basic.css" />
+<link rel="stylesheet" type="text/css" media="all" href="/stylesheets/dropzone/dropzone.css" />
+
+<script src="/javascript/json.js"></script>
+<script src="/javascript/dropzone.js"></script>
+<script src="http://code.jquery.com/jquery-1.7.1.js"></script>
+
+<script type="text/javascript">
+	var fileStr = decodeURIComponent(unescape("<%=files%>"));
+	var fileObj = JSON.parse(fileStr);
+
+	$(window.document).ready(function() {
+
+		//$("#demo-upload").dropzone({ url: "/createFile" });
+		Dropzone.options.myDropzone = {
+			autoProcessQueue : false,
+			init : function() {
+				$("#btn-uploadFiles").bind("click", function() {
+					myDropzone.processQueue();
+				});
+
+				this.on("success", function(obj) {
+					//alert("queuecomplete");
+					console.log(obj);
+				});
+			}
+		};
+		var myDropzone = new Dropzone("#frm-upload", Dropzone.options.myDropzone);
+
+		$.each(fileObj, function(index, value) {
+			var file = fileObj[index];
+			//var tr = $("<tr>");
+			//$("#grid").append(tr).app
+			//console.log(file.id)
+
+			var tr = "<tr><td>" + file.id + "</td>" + "<td>"
+					+ file.version + "</td>" + "<td>" + file.name
+					+ "</td>" + "<td>" + file.size + "</td>" + "<td>"
+					+ file.regDd + "</td>" + "<td>Action</td></tr>";
+			$("#grid").append(tr);
+		});
+	});
+</script>
+
+<html>
+<head>
+<title><%= title %></title>
+</head>
+<body>
+	<div class="container">
+		<div class="page-header">
+			<h1><%= title %></h1>
+		</div>
+
+		<div style="height: 30px;">
+			<button id="btn-uploadFiles" type="button" class="btn btn-primary btn-lg" style="float : right;">Upload</button>
+		</div>
+
+		<div id="uploadArea">
+			<form id="frm-upload" action="/createFile" class="dropzone dz-clickable">
+				<div class="dz-default dz-message">
+					<span>Drop files here to upload</span>
+				</div>
+			</form>
+		</div>
+
+		<table class="table table-bordered table-striped" style="margin: auto;">
+			<col width="10%" />
+			<col width="1%" />
+			<col width="" />
+			<col width="5%" />
+			<col width="20%" />
+			<col width="10%" />
+			<thead style="background-color: #C0C0C0;">
+				<tr>
+					<th>id</th>
+					<th>vesrion</th>
+					<th>file명</th>
+					<th>size</th>
+					<th>등록일자</th>
+					<th>Action</th>
+				</tr>
+			</thead>
+			<tbody id="grid"></tbody>
+		</table>
+	</div>
+</body>
+</html>
