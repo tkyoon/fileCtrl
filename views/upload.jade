@@ -52,6 +52,13 @@ script(type='text/javascript').
 -	}
 -}
 
+- var deleteConfirm = function(nm, id, ve) {
+-	if(confirm(file.name + "을(를) 삭제하시겠습니까?")){
+-		return;
+-	};
+-	location.href = "/downloadFile?fileId="+id+"&version="+ve;
+-}
+
 body
 	div.container
 		div.page-header
@@ -88,5 +95,9 @@ body
 							td
 								a(href="/downloadFile?fileId="+file.id+"&version="+file.version)= file.name
 							td #{convertFileSize(file.size)}
-							td= moment(file.regDd).format("YYYY/MM/DD hh:mm:ss")
-							td Action
+							td= moment(file.regDd).format("YYYY/MM/DD HH:mm:ss")
+							td
+								a(href="/updateVersionFile?fileId="+file.id) 버전업
+								&nbsp;
+								a(style="color:red" href="/removeFile?fileId="+file.id+"&version="+file.version) 삭제
+								<!-- a(href="javascript:deleteConfirm('"+file.name+"','"+file.id+"','"+file.version+"');") 삭제 -->

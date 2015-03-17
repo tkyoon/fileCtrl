@@ -50,8 +50,8 @@ exports.list = function(req, res) {
 	}).sort({regDd: -1}).exec(function(err,files){
 		res.render('upload', {
 			title : 'NodeJs File Control by TK'
-			//,files : escape(encodeURIComponent(JSON.stringify(files)))
-			,files : files
+			,files : escape(encodeURIComponent(JSON.stringify(files)))
+			//,files : files
 		});
 	});
 
@@ -172,4 +172,28 @@ exports.download = function(req, res) {
 			 */
 		}
 	});
+};
+
+/**
+ * 파일 삭제
+ */
+exports.remove = function(req, res) {
+	var reqUrl = url.parse(req.url, true);
+    var params = reqUrl.query;
+
+    FileDao.findOne({ id: params.fileId, version : params.version }, function (err, fileObj) {
+    	try {
+    		//console.log(fileObj.remove());
+    		var file = getFile(fileObj.id);
+    		fs.unlinkSync(file);
+
+		} catch (e) {
+			console.log(e);
+
+		} finally {
+			res.redirect("/");
+			res.end();
+		}
+
+    });
 };

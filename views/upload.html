@@ -6,8 +6,8 @@
 <link rel="stylesheet" type="text/css" media="all" href="/stylesheets/dropzone/basic.css" />
 <link rel="stylesheet" type="text/css" media="all" href="/stylesheets/dropzone/dropzone.css" />
 
-<script src="/javascript/json.js"></script>
-<script src="/javascript/dropzone.js"></script>
+<script src="/javascripts/json.js"></script>
+<script src="/javascripts/dropzone.js"></script>
 <script src="http://code.jquery.com/jquery-1.7.1.js"></script>
 
 <script type="text/javascript">
@@ -38,13 +38,34 @@
 			//$("#grid").append(tr).app
 			//console.log(file.id)
 
-			var tr = "<tr><td>" + file.id + "</td>" + "<td>"
-					+ file.version + "</td>" + "<td>" + file.name
-					+ "</td>" + "<td>" + file.size + "</td>" + "<td>"
-					+ file.regDd + "</td>" + "<td>Action</td></tr>";
+			var tr = "<tr>"
+					+ "<td>" + file.id + "</td>"
+					+ "<td>" + file.version + "</td>"
+					+ "<td>" + file.name + "</td>"
+					+ "<td>" + file.size + "</td>"
+					+ "<td>" + <%= moment(file.regDd).format("YYYY/MM/DD HH:mm:ss") %> + "</td>"
+					+ "<td>Action</td>"
+					+ "</tr>";
 			$("#grid").append(tr);
 		});
 	});
+
+	var convertFileSize = function(fileSize) {
+		var kb = 1024;		// 1Kbyte
+		var mb = kb * 1024;	// 1Mbyte
+		var gb = mb * 1024;	// 1Gbyte
+		var tb = gb * 1024;	// 1Tbyte
+		var fileSz = parseInt(fileSize);
+		if (mb > fileSz) {
+			return (fileSize / kb).toFixed(2) + ' KB';
+		} else if (mb <= fileSz && gb > fileSz) {
+			return (fileSize / mb).toFixed(2) + ' MB';
+		} else if (gb <= fileSz && tb > fileSz) {
+			return (fileSize / gb).toFixed(2) + ' GB';
+		} else if (tb <= fileSz) {
+			return (fileSize / tb).toFixed(2) + ' TB';
+		}
+	}
 </script>
 
 <html>
