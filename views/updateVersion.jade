@@ -16,6 +16,7 @@ script(type='text/javascript').
 		//$("#demo-upload").dropzone({ url: "/createFile" });
 		Dropzone.options.myDropzone = {
 			autoProcessQueue : false,
+			maxFiles: 1,
 			init : function() {
 				$("#btn-uploadFiles").bind("click", function() {
 					myDropzone.processQueue();
@@ -24,10 +25,19 @@ script(type='text/javascript').
 				this.on("success", function(obj) {
 					//alert("queuecomplete");
 					console.log(obj);
+					opener.location='/';
 				});
 
 				this.on("queuecomplete", function(obj) {
 					setTimeout( "location.reload()", 1*1000 );
+				});
+
+				this.on("addedfile", function(obj) {
+					$(".dz-message").hide();
+				});
+
+				this.on("removedfile", function(obj) {
+					$(".dz-message").show();
 				});
 			}
 		};
@@ -40,10 +50,6 @@ script(type='text/javascript').
 			return;
 		};
 		location.href = "/removeFile?fileId="+id+"&version="+ve;
-	}
-
-	function updateVersion(id) {
-		winOpen("UpdateVersionPop?id="+id, 800, 600);
 	}
 
 	var openF = 0;
@@ -78,6 +84,7 @@ script(type='text/javascript').
 	        intTop = (screenHeight - intHeight) / 2;
 	    }
 
+		alert(fileName.indexOf('http'));
 	    var features = eval("'width=" + intWidth + ",height=" + intHeight + ",left=" + intLeft + ",top=" + intTop + ",scrollbars=" + vScrollbars + ",resizable=" + vResizable + ",status=" + vStatus + "'");
 	    /**
 	    if(fileName.indexOf('http')>=-1){
@@ -123,44 +130,38 @@ script(type='text/javascript').
 -	}
 -}
 body
-	div.container
+	div.container1
 		div.page-header
-			h1= title
+			h1="File Version List"
+			h2="(Group ID:"+files[0].id+")"
 
-		div(style='height:30px')
-			button#btn-uploadFiles.btn.btn-primary.btn-lg(style="float:right") Upload
+			div(style='height:30px')
+				button#btn-uploadFiles.btn.btn-primary.btn-lg(style="float:right") Version up
 
-		div#uploadArea
-			form#frm-upload.dropzone.dz-clickable(action="/createFile")
-				div.dz-default.dz-message
-					span Drop files here to upload
+			div#uploadArea
+				form#frm-upload.dropzone.dz-clickable(style="min-height: 251px" action="/versionUpFile?id="+files[0].id)
+					div.dz-message
+						span
+							h3="버전업할 파일을 드래그하거나 클릭하여 선택해주세요."
+							br
+							h3="하나의 파일만 선택가능합니다."
 
 		table.table.table-bordered.table-striped(style="margin: auto;  margin-bottom: 28px;")
-			<!--col(width="10%")-->
 			col(width="1%")
 			col(width="")
-			col(width="10%")
-			col(width="20%")
 			col(width="12%")
+			col(width="20%")
 			thead(style="background-color: #C0C0C0")
 				tr
-					<!--th Group ID-->
 					th version
 					th file명
 					th size
 					th 등록일자
-					th Action
 				tbody#grid
 					each file in files
 						tr
-							<!--td= file.id-->
-							td(style="text-align:center;")= file.version
+							td= file.version
 							td
 								a(href="/downloadFile?fileId="+file._id)= file.name
-							td(style="text-align:center;") #{convertFileSize(file.size)}
-							td(style="text-align:center;")= moment(file.regDd).format("YYYY/MM/DD HH:mm:ss")
-							td(style="text-align:center;")
-								<!--a(href="/updateVersionFile?fileId="+file.id) 버전업-->
-								a(href="javascript:updateVersion('"+file.id+"');") 버전업
-								<!--font&nbsp;/&nbsp;-->
-								<!--a(style="color:red" href="javascript:deleteConfirm('"+file.name+"','"+file._id+"');") 삭제-->
+							td #{convertFileSize(file.size)}
+							td= moment(file.regDd).format("YYYY/MM/DD HH:mm:ss")

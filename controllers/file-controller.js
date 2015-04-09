@@ -10,6 +10,7 @@ var sys = require("sys");
 var filePath = "C:/nodejs.repo/"
 
 function makeFolder(str) {
+	str = str+"";
 	var pattern = /(-?\w+)(\w{2})/;
 	while (pattern.test(str)) {
 		str = str.replace(pattern, "$1/$2");
@@ -32,7 +33,7 @@ function makeFolder(str) {
  * @returns {String} ex) c:/repository/ab/cd/..../abcdefghijklmn
  */
 function getFile(id) {
-	var path = id;
+	var path = id+"";
 	var pattern = /(-?\w+)(\w{2})/;
 	while (pattern.test(path)) {
 		path = path.replace(pattern, "$1/$2");
@@ -45,24 +46,135 @@ function getFile(id) {
  * file list page
  */
 exports.list = function(req, res) {
-	console.log("@@ Call file list page");
-	FileDao.find(function(err, files) {
-	}).sort({regDd: -1}).exec(function(err,files){
-		res.render('upload', {
-			title : 'NodeJs File Control by TK'
-			,files : escape(encodeURIComponent(JSON.stringify(files)))
-			//,files : files
+	console.log("@@ 목록조회 화면이 호출되었습니다.");
+	//id별 최상위 버전 리스트 조회
+
+
+	FileDao.aggregate()
+	.group({
+		_id: '$id'
+		, version: { $max: '$version'}
+		, key :  { $max: '$_id'}
+	})
+	//.sort('-version')
+	.exec(function (err, gbList) {
+		if (err) return handleError(err);
+		console.log("Group by list : %j", gbList);
+		var condArr = new Array();
+		for(var i in gbList){
+			//console.log("xx:%j", gbList[i].key);
+			condArr.push(gbList[i].key);
+		}
+
+
+		FileDao.find({ _id: { $in: condArr } }, function(err, files) {
+		}).sort({regDd: -1}).exec(function(err, files){
+			//console.log("files: %j", files);
+			res.render('upload', {
+				title : 'NodeJs File Control by TK'
+				//,files : escape(encodeURIComponent(JSON.stringify(files))) //html 사용시
+				,files : files //jade 사용시
+			});
 		});
 	});
 
 
+
+
+//	FileDao.find(function(err, files) {
+//	}).sort({regDd: -1}).exec(function(err,files){
+//		res.render('upload', {
+//			title : 'NodeJs File Control by TK'
+//			//,files : escape(encodeURIComponent(JSON.stringify(files))) //html 사용시
+//			,files : files //jade 사용시
+//		});
+//	});
+};
+
+/**
+ * 버전업 목록
+ */
+exports.uvp = function(req, res) {
+	console.log("@@ 버전 목록조회 화면이 호출되었습니다.");
+	var reqUrl = url.parse(req.url, true);
+    var params = reqUrl.query;
+    console.log("parms = %j", params);
+
+//	var arr = new Array();
+//	arr.push(1);
+//	arr.push(2);
+//
+//	console.log(Math.max.apply(null, arr));
+//
+//	var o = {};
+////	o.map = function () { emit(this.id, this.version) }
+////	o.reduce = function (k, vals) { return Array.max(vals) }
+//	o.map = function () {
+//		var key = this.id;
+//		var vals = {
+//			version : this.version
+//			,oid    : this._id
+//		};
+//		emit(key, vals);
+//	};
+//	o.reduce = function (key, vals) {
+////		console.log("k:", k);
+////		console.log("vals:", vals);
+//		return Math.max.apply(null, vals.version);
+//	};
+//	o.out = { replace: 'filelist_last_version' };
+//
+//	FileDao.mapReduce(o, function (err, model, stats) {
+////		console.log("model:", model);
+////		console.log("err:", err);
+//		console.log('map reduce took %d ms', stats)
+//		model.find().exec(function (err, docs) {
+//			console.log("docs:", docs);
+//			for(var key in docs){
+//			    //console.log("-- : %j", docs[key]);
+//			}
+//		});
+//	});
+
+
+//	var groupByCond = "";
+//	FileDao.aggregate()
+//		.group({
+//			_id: '$id'
+//			//,name : '$name'
+//			, version: { $max: '$version' }
+//			//, rank: { $push: '$version' }
+//			, rank: {  $push: "$$ROOT" }
+//		})
+//		.sort('-version')
+//		.exec(function (err, cond) {
+//			if (err) return handleError(err);
+//			console.log("groupByCond: %j", cond);
+//
+//			FileDao.find(cond, function(err, files) {
+//			}).sort({version: -1}).exec(function(err, files){
+//				console.log("files: %j", files);
+//				res.render('updateVersion', {
+//					files : files
+//				});
+//			});
+//		});
+
+    console.log("id:%j", params.id);
+
+	FileDao.find({id:params.id}, function(err, files) {
+	}).sort({version: -1}).exec(function(err, files){
+		res.render('updateVersion', {
+			files : files
+		});
+	});
 };
 
 /**
  * file upload
  */
 exports.create = function(req, res) {
-	console.log("@@ Call file upload!");
+	console.log("@@ 파일업로드 실행이 호출되었습니다.");
 	// bodyParser 없을 경우 req.files 에러 발생.
 	console.log("req.files = %j", req.files);
 
@@ -76,37 +188,152 @@ exports.create = function(req, res) {
 			/**
 			 * 저장할 폴더 생성
 			 */
-			var fileFullPath = makeFolder(fileKey);
-
 			console.log("######################################");
 			console.log("file key  : %s", fileKey);
 			console.log("file name : %s", fileNm);
 			console.log("file size : %s", fileSz);
-			console.log("file path : %s", fileFullPath);
+			//console.log("file path : %s", fileFullPath);
 			console.log("######################################");
 
-			// 파일 저장 및 에러처리
-			fs.writeFile(fileFullPath + "/" + fileKey, data, function(error) {
+			//File DB 저장 후 File Write
+			var fileTmp = new FileDao({
+				id : fileKey,
+				name : fileNm,
+				size : fileSz
+			}).save(function(err, file){
+				console.log("DB saved file Obj:%j", file);
 
 				if (error) {
 					throw err;
 
 				} else {
-					// db 저장
-					var fileTmp = new FileDao({
-						id : fileKey,
-						name : fileNm,
-						size : fileSz
-					}).save();
-					console.log("fileTmp = %j", fileTmp);
-					res.redirect("/");
-					res.end();
+					try {
+						var fileFullPath = makeFolder(file._id);
+					} catch (e) {
+						//DB 삭제
+						FileDao.findOne({ _id:file._id}, function (err, fileObj) {}).remove().exec();
+						throw err;
+					}
 
+					fs.writeFile(fileFullPath + "/" + file._id, data, function(error) {
+						if (error) {
+							throw err;
+
+						} else {
+							res.redirect("/");
+							res.end();
+						}
+					}); //fs.writeFile
 				}
-			}); //fs.writeFile
+			})
+
+
+//			// 파일 저장 및 에러처리
+//			fs.writeFile(fileFullPath + "/" + fileKey, data, function(error) {
+//
+//				if (error) {
+//					throw err;
+//
+//				} else {
+//					// db 저장
+//					var fileTmp = new FileDao({
+//						id : fileKey,
+//						name : fileNm,
+//						size : fileSz
+//					}).save(function(err, file){
+//						console.log("file Object Id = %j", file);
+//					});
+//
+//					res.redirect("/");
+//					res.end();
+//
+//				}
+//			}); //fs.writeFile
 		});
 	}
 };
+exports.versionUpFile = function(req, res) {
+	console.log("@@ 버전업 파일업로드 실행이 호출되었습니다.");
+	// bodyParser 없을 경우 req.files 에러 발생.
+	console.log("req.files = %j", req.files);
+
+	var reqUrl = url.parse(req.url, true);
+    var params = reqUrl.query;
+    var fileKey = params.id
+
+	var file = req.files["file"];
+	fs.readFile(file.path, function(error, data) {
+		var fileNm = file.name;
+		var fileSz = file.size;
+
+		/**
+		 * 저장할 폴더 생성
+		 */
+		console.log("######################################");
+		console.log("file key  : %s", fileKey);
+		console.log("file name : %s", fileNm);
+		console.log("file size : %s", fileSz);
+		//console.log("file path : %s", fileFullPath);
+		console.log("######################################");
+
+		// file Max version 조회
+//		FileDao.findOne({id:fileKey}, function (err, fileObj) {
+//
+//		});
+
+		FileDao.aggregate()
+		.match({id:fileKey})
+		.group({
+			_id: "$id"
+			, version: { $max: '$version' }
+		})
+		.exec(function (err, cond) {
+			if (err) return handleError(err);
+			console.log("groupByCond: %j", cond);
+			var ve = parseInt(cond[0].version)+1;
+
+			console.log("ve: %j", ve);
+			//File DB 저장 후 File Write
+			var fileTmp = new FileDao({
+				id : fileKey
+				,name : fileNm
+				,size : fileSz
+				,version : ve
+			}).save(function(err, file){
+				console.log("DB saved file Obj:%j", file);
+
+				if (error) {
+					throw err;
+
+				} else {
+					try {
+						var fileFullPath = makeFolder(file._id);
+					} catch (e) {
+						//DB 삭제
+						FileDao.findOne({ _id:file._id}, function (err, fileObj) {}).remove().exec();
+						throw err;
+					}
+
+					fs.writeFile(fileFullPath + "/" + file._id, data, function(error) {
+						if (error) {
+							throw err;
+
+						} else {
+							res.redirect("/");
+							res.end();
+						}
+					}); //fs.writeFile
+				}
+			});
+		});
+
+
+
+
+	});
+};
+
+
 
 /**
  * file download
@@ -125,14 +352,15 @@ exports.create = function(req, res) {
 
  */
 exports.download = function(req, res) {
+	console.log("@@ 파일 다운로드가 호출되었습니다.");
 	var reqUrl = url.parse(req.url, true);
     var params = reqUrl.query;
-    //console.log("parms = %j", params);
+    console.log("parms = %j", params);
 
-	FileDao.findOne({ id: params.fileId, version : params.version }, function (err, fileObj) {
+	FileDao.findOne({_id: params.fileId}, function (err, fileObj) {
 		console.log(fileObj);
 		if(null != fileObj){
-			var file = getFile(fileObj.id);
+			var file = getFile(fileObj._id);
 
 			var mimetype = mime.lookup(fileObj.name);
 			res.setHeader('Content-type', mimetype);
@@ -178,13 +406,14 @@ exports.download = function(req, res) {
  * 파일 삭제
  */
 exports.remove = function(req, res) {
+	console.log("@@ 파일삭제가 호출되었습니다.");
 	var reqUrl = url.parse(req.url, true);
     var params = reqUrl.query;
 
-    FileDao.findOne({ id: params.fileId, version : params.version }, function (err, fileObj) {
+    FileDao.findOne({ _id: params.fileId}, function (err, fileObj) {
     	try {
     		//console.log(fileObj.remove());
-    		var file = getFile(fileObj.id);
+    		var file = getFile(fileObj._id);
     		fs.unlinkSync(file);
 
 		} catch (e) {
@@ -195,5 +424,5 @@ exports.remove = function(req, res) {
 			res.end();
 		}
 
-    });
+    }).remove().exec();
 };
