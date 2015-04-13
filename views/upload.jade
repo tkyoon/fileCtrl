@@ -48,13 +48,6 @@ script(type='text/javascript').
 
 	var openF = 0;
 	function winOpen(fileName, intWidth, intHeight, intLeft, intTop, vScrollbars, vResizable, vStatus, target, multiWinPop) {
-		//ie 9~11 bug fix
-		if(window.navigator.userAgent.indexOf("Trident")> -1){
-			if(parseInt(navigator.userAgent.match(/Trident\/(\d.\d)/i)[1]) > 4){
-				return;
-			}
-		}
-
 		var today = new Date();
 	    winName = target;
 
