@@ -5,7 +5,7 @@ var mongoose = require('mongoose')
 // declare file shema
 var fileSchema = new Schema({
     //objectId	: String 시스템 생성, unique key
-	id			: String // group key
+	groupId		: String // group key
     ,version	: { type: Number, "default" : 1 }
     ,name		: String
     ,size		: Number

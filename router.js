@@ -7,6 +7,7 @@ exports.route = function(app){
 	app.get('/', fileCtrl.list);
 	app.get('/UpdateVersionPop', fileCtrl.uvp);
 	app.get('/downloadFile', fileCtrl.download);
+	app.get('/downloadLatest', fileCtrl.downloadLatest);
 	app.get('/removeFile', fileCtrl.remove);
 
 	//post

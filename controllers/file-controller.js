@@ -49,16 +49,18 @@ exports.list = function(req, res) {
 	console.log("@@ 목록조회 화면이 호출되었습니다.");
 	//id별 최상위 버전 리스트 조회
 
-
 	FileDao.aggregate()
 	.group({
-		_id: '$id'
+		_id: '$groupId'
 		, version: { $max: '$version'}
 		, key :  { $max: '$_id'}
 	})
 	//.sort('-version')
 	.exec(function (err, gbList) {
-		if (err) return handleError(err);
+		if (err){
+			console.log(err);
+			return handleError(err);
+		}
 		console.log("Group by list : %j", gbList);
 		var condArr = new Array();
 		for(var i in gbList){
@@ -71,9 +73,9 @@ exports.list = function(req, res) {
 		}).sort({regDd: -1}).exec(function(err, files){
 			//console.log("files: %j", files);
 			res.render('upload', {
-				title : 'NodeJs File Control by TK'
+				//title : 'NodeJs File Control by TK'
 				//,files : escape(encodeURIComponent(JSON.stringify(files))) //html 사용시
-				,files : files //jade 사용시
+				files : files //jade 사용시
 			});
 		});
 	});
@@ -160,9 +162,9 @@ exports.uvp = function(req, res) {
 //			});
 //		});
 
-    console.log("id:%j", params.id);
+    console.log("groupId:%j", params.groupId);
 
-	FileDao.find({id:params.id}, function(err, files) {
+	FileDao.find({groupId:params.groupId}, function(err, files) {
 	}).sort({version: -1}).exec(function(err, files){
 		res.render('updateVersion', {
 			files : files
@@ -197,7 +199,7 @@ exports.create = function(req, res) {
 
 			//File DB 저장 후 File Write
 			var fileTmp = new FileDao({
-				id : fileKey,
+				groupId : fileKey,
 				name : fileNm,
 				size : fileSz
 			}).save(function(err, file){
@@ -258,8 +260,7 @@ exports.versionUpFile = function(req, res) {
 	console.log("req.files = %j", req.files);
 
 	var reqUrl = url.parse(req.url, true);
-    var params = reqUrl.query;
-    var fileKey = params.id
+    var groupId = reqUrl.query.groupId;
 
 	var file = req.files["file"];
 	fs.readFile(file.path, function(error, data) {
@@ -270,7 +271,7 @@ exports.versionUpFile = function(req, res) {
 		 * 저장할 폴더 생성
 		 */
 		console.log("######################################");
-		console.log("file key  : %s", fileKey);
+		console.log("file groupId  : %s", groupId);
 		console.log("file name : %s", fileNm);
 		console.log("file size : %s", fileSz);
 		//console.log("file path : %s", fileFullPath);
@@ -282,7 +283,7 @@ exports.versionUpFile = function(req, res) {
 //		});
 
 		FileDao.aggregate()
-		.match({id:fileKey})
+		.match({groupId:groupId})
 		.group({
 			_id: "$id"
 			, version: { $max: '$version' }
@@ -295,7 +296,7 @@ exports.versionUpFile = function(req, res) {
 			console.log("ve: %j", ve);
 			//File DB 저장 후 File Write
 			var fileTmp = new FileDao({
-				id : fileKey
+				groupId : groupId
 				,name : fileNm
 				,size : fileSz
 				,version : ve
@@ -401,6 +402,56 @@ exports.download = function(req, res) {
 		}
 	});
 };
+
+/**
+ * 최신버전의 File 다운로드
+ */
+exports.downloadLatest = function(req, res) {
+	console.log("@@ 파일 다운로드(Latest)가 호출되었습니다.");
+	var reqUrl = url.parse(req.url, true);
+	var groupId = reqUrl.query.groupId;
+
+	FileDao
+	.findOne({groupId:groupId})
+	.sort({version:-1})
+	.exec(function (err, fileObj) {
+		console.log(fileObj);
+		if(null != fileObj){
+			var file = getFile(fileObj._id);
+			console.log(file);
+
+			var mimetype = mime.lookup(fileObj.name);
+			res.setHeader('Content-type', mimetype);
+			res.setHeader('Content-disposition', 'attachment; filename=' + encodeURIComponent(fileObj.name));
+			//res.setHeader('Content-Length', fileObj.size);
+
+			var filestream = fs.createReadStream(file, { bufferSize: 64 * 1024 });
+		    filestream.pipe(res);
+		}
+	});
+
+//	FileDao.aggregate()
+//	.match({groupId:groupId})
+//	.group({
+//		_id: "$_id"
+//		, version: { $max: '$version' }
+//	})
+//	.exec(function (err, fileObj){
+//		console.log(fileObj);
+//		if(null != fileObj){
+//			var file = getFile(fileObj[0]._id);
+//			console.log(file);
+//
+//			var mimetype = mime.lookup(fileObj.name);
+//			res.setHeader('Content-type', mimetype);
+//			res.setHeader('Content-disposition', 'attachment; filename=' + encodeURIComponent(fileObj.name));
+//			//res.setHeader('Content-Length', fileObj.size);
+//
+//			var filestream = fs.createReadStream(file, { bufferSize: 64 * 1024 });
+//		    filestream.pipe(res);
+//		}
+//	});
+}
 
 /**
  * 파일 삭제

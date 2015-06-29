@@ -1,7 +1,7 @@
 doctype html
 html
 head
-title= title
+title JC1 솔루션3팀 NodeJs File Uploader by Yoon TaeKyung
 link(rel='stylesheet', href='/stylesheets/style.css')
 link(rel='stylesheet', href='/stylesheets/bootstrap.css')
 link(rel='stylesheet', href='/stylesheets/dropzone/basic.css')
@@ -43,7 +43,7 @@ script(type='text/javascript').
 	}
 
 	function updateVersion(id) {
-		winOpen("UpdateVersionPop?id="+id, 800, 600);
+		winOpen("UpdateVersionPop?groupId="+id, 800, 600);
 	}
 
 	var openF = 0;
@@ -118,7 +118,7 @@ script(type='text/javascript').
 body
 	div.container
 		div.page-header
-			h1= title
+			h1 JC1 솔루션3팀 NodeJs File Uploader by Yoon TaeKyung
 
 		div(style='height:30px')
 			button#btn-uploadFiles.btn.btn-primary.btn-lg(style="float:right") Upload
@@ -149,11 +149,11 @@ body
 							<!--td= file.id-->
 							td(style="text-align:center;")= file.version
 							td
-								a(href="/downloadFile?fileId="+file._id)= file.name
+								a(href="/downloadLatest?groupId="+file.groupId)= file.name
 							td(style="text-align:center;") #{convertFileSize(file.size)}
 							td(style="text-align:center;")= moment(file.regDd).format("YYYY/MM/DD HH:mm:ss")
 							td(style="text-align:center;")
 								<!--a(href="/updateVersionFile?fileId="+file.id) 버전업-->
-								a(href="javascript:updateVersion('"+file.id+"');") 버전업
+								a(href="javascript:updateVersion('"+file.groupId+"');") 버전업
 								<!--font&nbsp;/&nbsp;-->
 								<!--a(style="color:red" href="javascript:deleteConfirm('"+file.name+"','"+file._id+"');") 삭제-->
