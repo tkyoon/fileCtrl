@@ -1,6 +1,9 @@
 // binding task controller
 var fileCtrl = require('./controllers/file-controller.js');
 
+var multipart = require('connect-multiparty');
+var multipartMiddleware = multipart();
+
 // exports route function for app.js, take express() as argument
 exports.route = function(app){
 
@@ -14,6 +17,6 @@ exports.route = function(app){
 	app.get('/removeFile', fileCtrl.remove);
 
 	//post
-	app.post('/createFile', fileCtrl.create);
+	app.post('/createFile', multipartMiddleware, fileCtrl.create);
 	app.post('/versionUpFile', fileCtrl.versionUpFile);
 };

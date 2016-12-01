@@ -5,14 +5,24 @@ var FileDao = require('../models/fileDao.js');
 var mkdirp = require('mkdirp');
 var path = require('path');
 var mime = require('mime');
-var sys = require("sys");
+var sys = require("util");
 
 var rootPath = "";
 
+/**
+ * app.js에서 설정한 저장소 root 설정
+ */
 exports.setFileRoot = function(path){
 	rootPath = path;
-	console.log(rootPath);
-}
+	mkdirp.sync(rootPath, function(err) {
+		if (err) {
+			console.error(err)
+		}else{
+
+		}
+	});
+	console.log("@@ set root path = " + rootPath);
+};
 
 function makeFolder(str) {
 	str = str+"";
