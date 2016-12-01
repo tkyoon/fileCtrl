@@ -2,7 +2,7 @@
 var mongoose = require('mongoose');
 
 // connection uri
-var dbURI = 'mongodb://192.168.10.88/UAR';
+var dbURI = 'mongodb://dev1st.jcone.co.kr/UAR';
 //var dbURI =  "mongodb://tkyoon:xorud2@ds045521.mongolab.com:45521/CloudFoundry_sm3ogri3_quofgtf5"
 
 // exports connect function to app.js

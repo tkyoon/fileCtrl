@@ -3,6 +3,9 @@ var fileCtrl = require('./controllers/file-controller.js');
 
 // exports route function for app.js, take express() as argument
 exports.route = function(app){
+
+	fileCtrl.setFileRoot(app.get("repo"));
+
 	//get
 	app.get('/', fileCtrl.list);
 	app.get('/UpdateVersionPop', fileCtrl.uvp);

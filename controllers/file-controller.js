@@ -7,7 +7,12 @@ var path = require('path');
 var mime = require('mime');
 var sys = require("sys");
 
-var filePath = "C:/nodejs.repo/"
+var rootPath = "";
+
+exports.setFileRoot = function(path){
+	rootPath = path;
+	console.log(rootPath);
+}
 
 function makeFolder(str) {
 	str = str+"";
@@ -16,15 +21,15 @@ function makeFolder(str) {
 		str = str.replace(pattern, "$1/$2");
 	}
 
-	mkdirp.sync(filePath + str, function(err) {
+	mkdirp.sync(rootPath + str, function(err) {
 		if (err) {
 			console.error(err)
 		}else{
-			console.log(filePath + str);
+			console.log(rootPath + str);
 		}
 	});
 
-	return filePath + str;
+	return rootPath + str;
 }
 
 /**
@@ -39,7 +44,7 @@ function getFile(id) {
 		path = path.replace(pattern, "$1/$2");
 	}
 
-	return filePath + path + "/" + id;
+	return rootPath + path + "/" + id;
 }
 
 /**
@@ -477,3 +482,4 @@ exports.remove = function(req, res) {
 
     }).remove().exec();
 };
+

@@ -13,7 +13,7 @@ var app = express();
 // all environments
 app.set('port', process.env.PORT || 3000);
 app.set('views', __dirname + '/views');
-app.set('repo', "C:/Dev/Eclipse/Luna-Workspace/jcone-uar-nodejs/repository/");
+app.set('repo', "D:/NodejsApp/jcone-uar-nodejs/repo");
 app.engine('html', require('ejs').renderFile);
 //app.set('view engine', 'html');
 app.set('view engine', 'jade');
