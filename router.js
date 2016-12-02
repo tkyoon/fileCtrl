@@ -18,5 +18,5 @@ exports.route = function(app){
 
 	//post
 	app.post('/createFile', multipartMiddleware, fileCtrl.create);
-	app.post('/versionUpFile', fileCtrl.versionUpFile);
+	app.post('/versionUpFile', multipartMiddleware, fileCtrl.versionUpFile);
 };
