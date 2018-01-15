@@ -64,6 +64,7 @@ exports.list = function(req, res) {
 	console.log("@@ 목록조회 화면이 호출되었습니다.");
 	//id별 최상위 버전 리스트 조회
 
+	/** MongoDB3.6부터 aggregate() 방법 변경으로 수정  [TK Yoon 2018. 1. 15. 오전 9:33:53]
 	FileDao.aggregate()
 	.group({
 		_id: '$groupId'
@@ -93,20 +94,56 @@ exports.list = function(req, res) {
 				files : files //jade 사용시
 			});
 		});
+	}); */
+
+	var cursor = FileDao.aggregate([
+	{
+		$group : {
+			_id: '$groupId'
+			, version: { $max: '$version'}
+			, key :  { $max: '$_id'}
+		}
+	}]).cursor({ batchSize: 1000 }).exec(function(err, gbList) {
+		if(err) {
+			console.log(err);
+			return handleError(err);
+		}
+		console.log("Group by list : %j", gbList);
+
+		if(null != gbList) {
+			console.log("xx:%j", gbList.key);
+			condArr.push(gbList.key);
+		}
+		console.log("condArr:%j", condArr);
+
 	});
 
+	var condArr = new Array();
+	cursor.each(function(err, gbList) {
+		if(err) {
+			console.log(err);
+			return handleError(err);
+		}
+		console.log("Group by list : %j", gbList);
 
+		//loop가 끝난경우 null로 확인
+		if(null != gbList) {
+			console.log("xx:%j", gbList.key);
+			condArr.push(gbList.key);
 
-
-//	FileDao.find(function(err, files) {
-//	}).sort({regDd: -1}).exec(function(err,files){
-//		res.render('upload', {
-//			title : 'NodeJs File Control by TK'
-//			//,files : escape(encodeURIComponent(JSON.stringify(files))) //html 사용시
-//			,files : files //jade 사용시
-//		});
-//	});
-};
+		} else {
+			FileDao.find({ _id: { $in: condArr } }, function(err, files) {
+			}).sort({regDd: -1}).exec(function(err, files){
+				//console.log("files: %j", files);
+				res.render('upload', {
+					//title : 'NodeJs File Control by TK'
+					//,files : escape(encodeURIComponent(JSON.stringify(files))) //html 사용시
+					files : files //jade 사용시
+				});
+			});
+		}
+	});
+}
 
 /**
  * 버전업 목록
@@ -297,50 +334,61 @@ exports.versionUpFile = function(req, res) {
 //
 //		});
 
-		FileDao.aggregate()
+		var cursor = FileDao.aggregate()
 		.match({groupId:groupId})
 		.group({
 			_id: "$id"
 			, version: { $max: '$version' }
-		})
-		.exec(function (err, cond) {
-			if (err) return handleError(err);
-			console.log("groupByCond: %j", cond);
-			var ve = parseInt(cond[0].version)+1;
+		}).cursor({ batchSize: 1000 })
+		.exec();
 
-			console.log("ve: %j", ve);
-			//File DB 저장 후 File Write
-			var fileTmp = new FileDao({
-				groupId : groupId
-				,name : fileNm
-				,size : fileSz
-				,version : ve
-			}).save(function(err, file){
-				console.log("DB saved file Obj:%j", file);
+		var ve = 0;
+		cursor.each(function (err, cond) {
+			if (err){
+				console.log(err);
+				 return err;
+			}
 
-				if (error) {
-					throw err;
+			if(null != cond) {
+				console.log("groupByCond: %j", cond);
+				ve = parseInt(cond.version)+1;
+				console.log("ve: %j", ve);
 
-				} else {
-					try {
-						var fileFullPath = makeFolder(file._id);
-					} catch (e) {
-						//DB 삭제
-						FileDao.findOne({ _id:file._id}, function (err, fileObj) {}).remove().exec();
+			} else {
+				//File DB 저장 후 File Write
+				var fileTmp = new FileDao({
+					groupId : groupId
+					,name : fileNm
+					,size : fileSz
+					,version : ve
+				}).save(function(err, file){
+					console.log("DB saved file Obj:%j", file);
+
+					if (error) {
 						throw err;
-					}
 
-					fs.writeFile(fileFullPath + "/" + file._id, data, function(error) {
-						if (error) {
+					} else {
+						try {
+							var fileFullPath = makeFolder(file._id);
+						} catch (e) {
+							//DB 삭제
+							FileDao.findOne({ _id:file._id}, function (err, fileObj) {}).remove().exec();
 							throw err;
-
-						} else {
-							res.redirect("/");
-							res.end();
 						}
-					}); //fs.writeFile
-				}
-			});
+
+						fs.writeFile(fileFullPath + "/" + file._id, data, function(error) {
+							if (error) {
+								throw err;
+
+							} else {
+								res.redirect("/");
+								res.end();
+							}
+						}); //fs.writeFile
+					}
+				});
+			}
+
 		});
 
 
